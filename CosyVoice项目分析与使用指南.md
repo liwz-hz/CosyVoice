@@ -101,9 +101,9 @@ sudo yum install sox sox-devel
 
 #### 4.1.4 系统要求
 
-- **GPU**：NVIDIA GPU（建议 8GB+ 显存）
-- **CUDA**：12.1
-- **Python**：3.10
+- **Python**：3.10（3.11+ 也可）
+- **GPU（推荐）**：NVIDIA GPU（建议 8GB+ 显存），CUDA 12.1
+- **CPU（可用但慢）**：可在 CPU 上运行，使用 `torch` CPU 版本即可，需安装 `soundfile` 保存音频
 
 ### 4.2 下载模型
 
@@ -204,7 +204,36 @@ for i, output in enumerate(cosyvoice.inference_vc(
     torchaudio.save(f'vc_{i}.wav', output['tts_speech'], cosyvoice.sample_rate)
 ```
 
-### 4.5 Web UI 演示
+### 4.5 CPU 运行示例
+
+如果只有 CPU，可以按以下步骤运行：
+
+```bash
+# 1. 安装 CPU 版 PyTorch
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# 2. 安装必要依赖
+pip install hyperpyyaml diffusers omegaconf conformer onnx onnxruntime openai-whisper pyworld pyarrow gdown soundfile
+
+# 3. 运行推理（使用 soundfile 保存音频）
+python3 -c "
+import sys
+sys.path.append('third_party/Matcha-TTS')
+from cosyvoice.cli.cosyvoice import AutoModel
+import soundfile as sf
+
+cosyvoice = AutoModel(model_dir='pretrained_models/CosyVoice-300M-SFT', fp16=False)
+for i, j in enumerate(cosyvoice.inference_sft('你好，世界！', '中文女', stream=False)):
+    sf.write(f'output_{i}.wav', j['tts_speech'].squeeze().numpy(), cosyvoice.sample_rate)
+    print(f'Saved output_{i}.wav')
+"
+```
+
+**实测性能**（ARM64 CPU, CosyVoice-300M-SFT）：
+- 模型加载：3.3 秒
+- 生成 4.9 秒音频：29.8 秒（RTF ≈ 6.06）
+
+### 4.6 Web UI 演示
 
 ```bash
 python webui.py --port 8000 --model_dir pretrained_models/Fun-CosyVoice3-0.5B
@@ -328,7 +357,14 @@ CosyVoice/
 
 ### Q: 没有 GPU 能运行吗？
 
-可以，但会非常慢。推理时间可能从几秒变成几分钟甚至更久。不推荐在生产环境使用 CPU 推理。
+可以。实际测试（ARM64 CPU, Python 3.13, CosyVoice-300M-SFT）：
+- **模型加载**：3.3 秒
+- **推理耗时**：29.8 秒（生成 4.9 秒音频）
+- **RTF（实时率）**：约 6.06（CPU 上约 6 倍实时时间，GPU 上可降至 0.1 以下）
+- **安装 CPU 版 PyTorch**：`pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu`
+- **保存音频**：需额外安装 `pip install soundfile`
+
+CPU 可用于测试和开发，但不推荐用于生产环境。
 
 ### Q: 显存不足怎么办？
 
