@@ -357,14 +357,20 @@ CosyVoice/
 
 ### Q: 没有 GPU 能运行吗？
 
-可以。实际测试（ARM64 CPU, Python 3.13, CosyVoice-300M-SFT）：
+可以，但需注意版本兼容性：
+
+**✅ CosyVoice 1.0 (300M) - CPU 测试通过**（ARM64 CPU, Python 3.13, CosyVoice-300M-SFT）：
 - **模型加载**：3.3 秒
 - **推理耗时**：29.8 秒（生成 4.9 秒音频）
 - **RTF（实时率）**：约 6.06（CPU 上约 6 倍实时时间，GPU 上可降至 0.1 以下）
 - **安装 CPU 版 PyTorch**：`pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu`
 - **保存音频**：需额外安装 `pip install soundfile`
 
-CPU 可用于测试和开发，但不推荐用于生产环境。
+**⚠️ CosyVoice 3.0 (0.5B) - CPU 兼容性限制**：
+- 3.0 模型使用了 BFloat16 精度，在较新的 `transformers` 版本下可能存在类型不匹配问题（`mat1 and mat2 must have the same dtype, but got Float and BFloat16`）
+- 建议在 GPU 环境或使用 `transformers==4.51.3` 等指定版本运行 3.0
+
+CPU 可用于 1.0 版本的测试和开发，但 2.0/3.0 推荐使用 GPU 环境。
 
 ### Q: 显存不足怎么办？
 
