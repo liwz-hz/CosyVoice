@@ -314,7 +314,65 @@ cd examples/grpo/cosyvoice2
 
 ---
 
-## 6. 项目目录结构
+## 6. 预训练模型详解
+
+模型文件默认存放在项目根目录下的 `pretrained_models/` 文件夹中。
+
+### 6.1 版本关系说明
+
+虽然 3.0 在底层技术（音质、克隆能力）上优于 1.0，但**3.0 并不是完全覆盖 1.0**，两者各有侧重：
+
+*   **CosyVoice 1.0 SFT (开箱即用)**: 
+    *   **特点**: 这是一个**预置音色版**。模型内部已经“记住”了几个标准音色（如：`中文女`、`英文男`）。
+    *   **优势**: 不需要提供参考音频，选择音色即可直接合成。
+*   **CosyVoice 3.0 (高度定制)**: 
+    *   **特点**: 这是一个强大的**克隆引擎**，默认没有预设音色。
+    *   **优势**: 音质更自然，支持零样本克隆（给一段参考音频就能模仿）、方言控制和强化学习版的高级情感表达。
+
+### 6.2 模型文件拆解
+
+当前目录下有两个主要模型文件夹：
+
+#### A. `pretrained_models/CosyVoice-300M-SFT` (1.0 版本)
+总大小：约 5.1 GB
+
+| 文件名 | 大小 | 说明 |
+| :--- | :--- | :--- |
+| `llm.llm.fp32.zip` | **1.5 GB** | LLM 语音模型 (FP32 高精度) |
+| `llm.pt` | **1.2 GB** | LLM 主权重文件 (PyTorch) |
+| `llm.llm.fp16.zip` | **772 MB** | LLM 语音模型 (FP16 量化，推理常用，体积减半) |
+| `speech_tokenizer_v1.onnx` | **499 MB** | OpenAI Whisper 语音 Tokenizer (分析参考音频) |
+| `flow.pt` | **401 MB** | Flow Matching 主权重 |
+| `llm.text_encoder.fp32.zip` | **354 MB** | LLM 文本编码器 (FP32) |
+| `flow.decoder.estimator.fp32.onnx` | **314 MB** | Flow 解码器估计器 (ONNX) |
+| `llm.text_encoder.fp16.zip` | **197 MB** | LLM 文本编码器 (FP16) |
+| `flow.encoder.fp32.zip` | **99 MB** | Flow 编码器 (FP32) |
+| `hift.pt` | **79 MB** | HiFi-GAN 声码器权重 (转波形) |
+| `flow.encoder.fp16.zip` | **60 MB** | Flow 编码器 (FP16) |
+| `campplus.onnx` | **27 MB** | CAM++ 说话人特征提取器 |
+| `spk2info.pt` | **8.0 KB** | **SFT版特有**: 存储预置音色信息的文件 |
+
+#### B. `pretrained_models/Fun-CosyVoice3-0.5B` (3.0 最新版本)
+总大小：约 12 GB (包含多种版本和全精度模型)
+
+| 文件名 | 大小 | 说明 |
+| :--- | :--- | :--- |
+| `llm.rl.pt` | **1.9 GB** | **强化学习版 (RL)**: 在基础版之上使用 GRPO 强化学习微调，韵律和情感更自然 (推荐) |
+| `llm.pt` | **1.9 GB** | **基础版 (Base)**: 标准的 0.5B 大模型 |
+| `flow.pt` | **1.3 GB** | Flow Matching 主权重 |
+| `flow.decoder.estimator.fp32.onnx` | **1.3 GB** | Flow 解码器估计器 (**FP32 全精度**，占用空间大) |
+| `speech_tokenizer_v3.onnx` | **925 MB** | 第三代语音分词器 (分析音色) |
+| `speech_tokenizer_v3.batch.onnx` | **925 MB** | 批量处理版本的语音分词器 |
+| `hift.pt` | **80 MB** | HiFi-GAN 声码器权重 |
+| `campplus.onnx` | **27 MB** | 说话人特征提取器 |
+
+**💡 提示**: 3.0 模型之所以很大（10G+），是因为它包含了多个大文件：
+1.  **双版本权重**: 同时包含了基础版 (`llm.pt`) 和强化学习版 (`llm.rl.pt`)，通常只需保留 `llm.rl.pt` 即可。
+2.  **全精度 ONNX**: 很多 `.onnx` 文件是 FP32 全精度的，如果显存/硬盘有限，可以删除部分不需要的 ONNX 文件。
+
+---
+
+## 7. 项目目录结构
 
 ```
 CosyVoice/
@@ -353,7 +411,7 @@ CosyVoice/
 
 ---
 
-## 7. 常见问题
+## 8. 常见问题
 
 ### Q: 没有 GPU 能运行吗？
 
